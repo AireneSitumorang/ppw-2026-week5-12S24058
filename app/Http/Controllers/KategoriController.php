@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Kategori;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+class KategoriController extends Controller
+{
+    /**
+     * Tampilkan daftar kategori dengan jumlah buku (withCount) & pagination.
+     */
+    public function index()
+    {
+        $kategoris = Kategori::withCount('bukus')->latest()->paginate(10);
+        return view('kategori.index', compact('kategoris'));
+    }
+
+    /**
+     * Tampilkan form pembuatan kategori baru.
+     */
+    public function create()
+    {
+        return view('kategori.create');
+    }
+
+    /**
+     * Simpan kategori baru ke database dengan validasi ketat.
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'kode_kategori' => 'required|string|max:20|unique:kategoris,kode_kategori',
+            'nama_kategori' => 'required|string|min:3|max:100',
+        ], [
+            'kode_kategori.required' => 'Kode kategori wajib diisi.',
+            'kode_kategori.unique'   => 'Kode kategori sudah terdaftar.',
+            'nama_kategori.required' => 'Nama kategori wajib diisi.',
+            'nama_kategori.min'      => 'Nama kategori minimal 3 karakter.',
+        ]);
+
+        Kategori::create($validated);
+
+        return redirect()->route('kategori.index')->with('success', 'Kategori baru berhasil ditambahkan!');
+    }
+
+    /**
+     * Tampilkan detail kategori beserta daftar koleksi buku di dalamnya (Eager Loading).
+     */
+    public function show(Kategori $kategori)
+    {
+        $kategori->load(['bukus' => function ($query) {
+            $query->latest();
+        }]);
+
+        return view('kategori.show', compact('kategori'));
+    }
+
+    /**
+     * Tampilkan form edit kategori (Implicit Route Model Binding).
+     */
+    public function edit(Kategori $kategori)
+    {
+        return view('kategori.edit', compact('kategori'));
+    }
+
+    /**
+     * Perbarui data kategori dengan pengecualian unique rule untuk id saat ini.
+     */
+    public function update(Request $request, Kategori $kategori)
+    {
+        $validated = $request->validate([
+            'kode_kategori' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('kategoris', 'kode_kategori')->ignore($kategori->id),
+            ],
+            'nama_kategori' => 'required|string|min:3|max:100',
+        ], [
+            'kode_kategori.required' => 'Kode kategori wajib diisi.',
+            'kode_kategori.unique'   => 'Kode kategori sudah digunakan kategori lain.',
+            'nama_kategori.required' => 'Nama kategori wajib diisi.',
+        ]);
+
+        $kategori->update($validated);
+
+        return redirect()->route('kategori.index')->with('success', 'Kategori berhasil diperbarui!');
+    }
+
+    /**
+     * Hapus kategori dari database (Cascade delete akan otomatis menghapus buku berelasi).
+     */
+    public function destroy(Kategori $kategori)
+    {
+        $kategori->delete();
+        return redirect()->route('kategori.index')->with('success', 'Kategori berhasil dihapus!');
+    }
+}
