@@ -9,23 +9,20 @@ use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
         //
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        // Aktifkan styling Bootstrap 5 untuk pagination bawaan Laravel
+        // Sembunyikan warning deprecated PHP 8.5
+        error_reporting(E_ALL & ~E_DEPRECATED);
+
+        // Aktifkan styling Bootstrap 5 untuk pagination
         Paginator::useBootstrapFive();
 
-        // Audit Kueri SQL untuk pembuktian Eager Loading mitigasi N+1 problem
+        // Audit Kueri SQL pembuktian Eager Loading mitigasi N+1 problem
         DB::listen(function ($query) {
             Log::info(sprintf(
                 "[SQL AUDIT] (%.2f ms) %s [Bindings: %s]",

@@ -2,108 +2,88 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use App\Models\Buku;
 use App\Models\Kategori;
-use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class BukuController extends Controller
 {
-    /**
-     * Tampilkan daftar buku dengan optimasi Eager Loading mitigasi N+1 problem.
-     */
-    public function index()
+    // Menampilkan daftar buku dengan pencarian, filter kategori, dan eager loading
+    public function index(Request $request)
     {
-        $bukus = Buku::with('kategori')->latest()->paginate(10);
-        return view('buku.index', compact('bukus'));
+        $search = $request->input('search');
+        $kategoriId = $request->input('kategori_id');
+
+        $bukus = Buku::with('kategori')
+            ->when($search, function ($query, $search) {
+                return $query->where('judul', 'like', "%{$search}%")
+                             ->orWhere('penulis', 'like', "%{$search}%")
+                             ->orWhere('isbn', 'like', "%{$search}%");
+            })
+            ->when($kategoriId, function ($query, $kategoriId) {
+                return $query->where('kategori_id', $kategoriId);
+            })
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        $kategoris = Kategori::all();
+
+        return view('buku.index', compact('bukus', 'kategoris'));
     }
 
-    /**
-     * Tampilkan form tambah buku baru beserta list kategori pilihan.
-     */
+    // Menampilkan form tambah buku baru
     public function create()
     {
-        $kategoris = Kategori::orderBy('nama_kategori')->get();
+        $kategoris = Kategori::all();
         return view('buku.create', compact('kategoris'));
     }
 
-    /**
-     * Simpan buku baru ke database dengan validasi ketat sisi server.
-     */
+    // Menyimpan data buku baru ke database
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'isbn'         => 'required|string|max:20|unique:bukus,isbn',
-            'judul'        => 'required|string|min:5|max:255',
-            'penulis'      => 'required|string|min:3|max:150',
-            'penerbit'     => 'required|string|min:3|max:150',
-            'tahun_terbit' => 'required|integer|digits:4|min:1900|max:' . date('Y'),
-            'kategori_id'  => 'required|exists:kategoris,id',
-            'stok'         => 'required|integer|min:0',
-            'sinopsis'     => 'nullable|string',
-        ], [
-            'isbn.required'         => 'Nomor ISBN wajib diisi.',
-            'isbn.unique'           => 'ISBN sudah pernah didaftarkan.',
-            'judul.required'        => 'Judul buku wajib diisi.',
-            'judul.min'             => 'Judul buku minimal 5 karakter sesuai standar perpustakaan.',
-            'penulis.required'      => 'Nama penulis wajib diisi.',
-            'penerbit.required'     => 'Nama penerbit wajib diisi.',
-            'tahun_terbit.required' => 'Tahun terbit wajib diisi.',
-            'tahun_terbit.digits'   => 'Format tahun terbit harus 4 digit angka.',
-            'kategori_id.required'  => 'Pilih kategori buku.',
-            'kategori_id.exists'    => 'Kategori yang dipilih tidak valid.',
-            'stok.required'         => 'Jumlah stok wajib diisi.',
-            'stok.min'              => 'Jumlah stok minimal 0.',
+            'isbn' => 'required|string|unique:bukus,isbn',
+            'judul' => 'required|string|min:5|max:255',
+            'penulis' => 'required|string|max:150',
+            'penerbit' => 'required|string|max:150',
+            'tahun_terbit' => 'required|digits:4',
+            'kategori_id' => 'required|exists:kategoris,id',
+            'stok' => 'required|integer|min:0',
+            'sinopsis' => 'nullable|string',
         ]);
 
         Buku::create($validated);
 
-        return redirect()->route('buku.index')->with('success', 'Buku baru berhasil ditambahkan ke katalog!');
+        return redirect()->route('buku.index')->with('success', 'Buku baru berhasil ditambahkan!');
     }
 
-    /**
-     * Tampilkan detail lengkap satu buku dengan relasi kategorinya.
-     */
-    public function show(Buku $buku)
+    // Menampilkan halaman detail buku (Perbaikan agar tidak kosong)
+    public function show($id)
     {
-        $buku->load('kategori');
+        $buku = Buku::with('kategori')->findOrFail($id);
         return view('buku.show', compact('buku'));
     }
 
-    /**
-     * Tampilkan form edit buku.
-     */
+    // Menampilkan form edit buku
     public function edit(Buku $buku)
     {
-        $kategoris = Kategori::orderBy('nama_kategori')->get();
+        $kategoris = Kategori::all();
         return view('buku.edit', compact('buku', 'kategoris'));
     }
 
-    /**
-     * Perbarui data buku di database.
-     */
+    // Memperbarui data buku di database
     public function update(Request $request, Buku $buku)
     {
         $validated = $request->validate([
-            'isbn'         => [
-                'required',
-                'string',
-                'max:20',
-                Rule::unique('bukus', 'isbn')->ignore($buku->id),
-            ],
-            'judul'        => 'required|string|min:5|max:255',
-            'penulis'      => 'required|string|min:3|max:150',
-            'penerbit'     => 'required|string|min:3|max:150',
-            'tahun_terbit' => 'required|integer|digits:4|min:1900|max:' . date('Y'),
-            'kategori_id'  => 'required|exists:kategoris,id',
-            'stok'         => 'required|integer|min:0',
-            'sinopsis'     => 'nullable|string',
-        ], [
-            'isbn.required'         => 'Nomor ISBN wajib diisi.',
-            'isbn.unique'           => 'ISBN sudah digunakan buku lain.',
-            'judul.required'        => 'Judul buku wajib diisi.',
-            'judul.min'             => 'Judul buku minimal 5 karakter.',
-            'stok.min'              => 'Jumlah stok tidak boleh bernilai negatif.',
+            'isbn' => 'required|string|unique:bukus,isbn,' . $buku->id,
+            'judul' => 'required|string|min:5|max:255',
+            'penulis' => 'required|string|max:150',
+            'penerbit' => 'required|string|max:150',
+            'tahun_terbit' => 'required|digits:4',
+            'kategori_id' => 'required|exists:kategoris,id',
+            'stok' => 'required|integer|min:0',
+            'sinopsis' => 'nullable|string',
         ]);
 
         $buku->update($validated);
@@ -111,12 +91,10 @@ class BukuController extends Controller
         return redirect()->route('buku.index')->with('success', 'Data buku berhasil diperbarui!');
     }
 
-    /**
-     * Hapus buku dari katalog.
-     */
+    // Menghapus data buku dari database
     public function destroy(Buku $buku)
     {
         $buku->delete();
-        return redirect()->route('buku.index')->with('success', 'Buku berhasil dihapus dari sistem!');
+        return redirect()->route('buku.index')->with('success', 'Buku berhasil dihapus!');
     }
 }

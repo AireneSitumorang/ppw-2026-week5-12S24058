@@ -2,13 +2,14 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BukuController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KategoriController;
 
-// Redirect root URL ke daftar katalog buku
-Route::get('/', function () {
-    return redirect()->route('buku.index');
-});
+// Halaman Dashboard Utama
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 
-// 7 Aksi Baku RESTful Resource Controller untuk Kategori & Buku
-Route::resource('kategori', KategoriController::class);
+// Resource Controller Buku (CRUD + Pencarian & Filter)
 Route::resource('buku', BukuController::class);
+
+// Resource Controller Kategori
+Route::resource('kategori', KategoriController::class)->except(['show']);
