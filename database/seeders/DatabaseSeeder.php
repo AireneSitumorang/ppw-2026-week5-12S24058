@@ -1,50 +1,61 @@
-<?php
-
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
+use App\Models\User;
 use App\Models\Kategori;
 use App\Models\Buku;
-use Faker\Factory as Faker;
+use App\Models\Peminjaman;
+use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $faker = Faker::create('id_ID');
+        // 1. Akun Pustakawan Uji (Wajib sesuai modul: pustakawan@del.ac.id)
+        User::updateOrCreate(
+            ['email' => 'pustakawan@del.ac.id'],
+            [
+                'name' => 'Pustakawan Del',
+                'password' => Hash::make('password123'),
+            ]
+        );
 
-        // 1. Kategori Tetap (5 Kategori)
-        $kategorisData = [
-            ['kode_kategori' => 'RPL', 'nama_kategori' => 'Rekayasa Perangkat Lunak'],
-            ['kode_kategori' => 'JK', 'nama_kategori' => 'Jaringan Komputer'],
-            ['kode_kategori' => 'AI', 'nama_kategori' => 'Kecerdasan Buatan'],
-            ['kode_kategori' => 'DB', 'nama_kategori' => 'Manajemen Basis Data'],
-            ['kode_kategori' => 'SI', 'nama_kategori' => 'Sistem Informasi Bisnis'],
-        ];
+        // 2. Sampel Kategori
+        $kategoriIT = Kategori::firstOrCreate(['nama_kategori' => 'Teknologi Informasi']);
 
-        foreach ($kategorisData as $kat) {
-            Kategori::firstOrCreate(
-                ['kode_kategori' => $kat['kode_kategori']],
-                ['nama_kategori' => $kat['nama_kategori']]
-            );
-        }
+        // 3. Sampel Buku (Wajib ada stok = 0 dan stok = 1 untuk uji ACID)
+        $buku1 = Buku::updateOrCreate(
+            ['isbn' => '978-602-001-1'],
+            [
+                'judul' => 'Pemrograman Web Lanjutan Laravel',
+                'penulis' => 'Chandro Pardede',
+                'stok' => 1,
+                'kategori_id' => $kategoriIT->id,
+            ]
+        );
 
-        $kategoriIds = Kategori::pluck('id')->toArray();
+        $buku2 = Buku::updateOrCreate(
+            ['isbn' => '978-602-002-2'],
+            [
+                'judul' => 'Algoritma dan Struktur Data',
+                'penulis' => 'Tim Dosen IT Del',
+                'stok' => 0,
+                'kategori_id' => $kategoriIT->id,
+            ]
+        );
 
-        // 2. Jumlah buku diatur menjadi 130
-        $jumlahBuku = 130; 
-
-        for ($i = 1; $i <= $jumlahBuku; $i++) {
-            Buku::create([
-                'isbn' => '978-602-' . $faker->unique()->numerify('#####-###-#'),
-                'judul' => ucfirst($faker->words(rand(2, 4), true)) . ' (Edisi ' . $i . ')',
-                'penulis' => $faker->name(),
-                'penerbit' => 'Del Press Kampus Del',
-                'tahun_terbit' => $faker->numberBetween(2020, 2026),
-                'kategori_id' => $faker->randomElement($kategoriIds),
-                'stok' => $faker->numberBetween(5, 40),
-                'sinopsis' => $faker->paragraph(2),
-            ]);
-        }
+        // 4. Sampel Peminjaman[cite: 7]
+        Peminjaman::updateOrCreate(
+            ['kode_pinjam' => 'PINJAM-2026-001'],
+            [
+                'buku_id' => $buku1->id,
+                'nim_peminjam' => '12S24058',
+                'nama_peminjam' => 'Airene Situmorang',
+                'tanggal_pinjam' => Carbon::now()->subDays(2),
+                'tanggal_jatuh_tempo' => Carbon::now()->addDays(5),
+                'status' => 'dipinjam',
+            ]
+        );
     }
 }
