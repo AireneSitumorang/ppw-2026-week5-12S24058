@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 
 class PeminjamanController extends Controller
 {
+    // 1. Proses Peminjaman Buku (ACID & lockForUpdate)
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -22,12 +23,14 @@ class PeminjamanController extends Controller
 
         try {
             DB::transaction(function () use ($validated) {
+                // Pessimistic Locking untuk mencegah race condition stok
                 $buku = Buku::where('id', $validated['buku_id'])->lockForUpdate()->firstOrFail();
 
                 if ($buku->stok < 1) {
                     throw new \RuntimeException("Maaf, stok buku '{$buku->judul}' telah habis!");
                 }
 
+                // Cek peminjaman aktif ganda oleh NIM yang sama
                 $cekPinjamAktif = Peminjaman::where('buku_id', $buku->id)
                     ->where('nim_peminjam', $validated['nim_peminjam'])
                     ->where('status', 'dipinjam')
@@ -37,6 +40,7 @@ class PeminjamanController extends Controller
                     throw new \RuntimeException("Anda sudah meminjam buku ini dan belum mengembalikannya.");
                 }
 
+                // Kurangi stok dan catat peminjaman secara atomik
                 $buku->decrement('stok');
 
                 Peminjaman::create([
@@ -57,6 +61,40 @@ class PeminjamanController extends Controller
         } catch (QueryException $e) {
             Log::error('[DB EXCEPTION Peminjaman]: ' . $e->getMessage());
             return back()->withInput()->with('error', 'Terjadi kesalahan pada basis data.');
+        }
+    }
+
+    // 2. Proses Pengembalian Buku (ACID, lockForUpdate, & Increment Stok)
+    public function kembalikan($id)
+    {
+        try {
+            DB::transaction(function () use ($id) {
+                // Kunci data peminjaman dan buku terkait
+                $peminjaman = Peminjaman::where('id', $id)->lockForUpdate()->firstOrFail();
+
+                if ($peminjaman->status === 'dikembalikan') {
+                    throw new \RuntimeException("Buku ini sudah dikembalikan sebelumnya.");
+                }
+
+                $buku = Buku::where('id', $peminjaman->buku_id)->lockForUpdate()->firstOrFail();
+
+                // Ubah status peminjaman dan isi tanggal kembali
+                $peminjaman->update([
+                    'status' => 'dikembalikan',
+                    'tanggal_kembali' => now(),
+                ]);
+
+                // Kembalikan stok buku
+                $buku->increment('stok');
+            }, 3);
+
+            return back()->with('success', 'Pengembalian buku berhasil diproses dan stok telah diperbarui!');
+
+        } catch (\RuntimeException $e) {
+            return back()->with('error', $e->getMessage());
+        } catch (QueryException $e) {
+            Log::error('[DB EXCEPTION Pengembalian]: ' . $e->getMessage());
+            return back()->with('error', 'Terjadi kesalahan pada basis data saat pengembalian.');
         }
     }
 }

@@ -1,3 +1,5 @@
+<?php
+
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
@@ -12,7 +14,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. Akun Pustakawan Uji (Wajib sesuai modul: pustakawan@del.ac.id)
+        // 1. Akun Pustakawan Uji
         User::updateOrCreate(
             ['email' => 'pustakawan@del.ac.id'],
             [
@@ -22,16 +24,22 @@ class DatabaseSeeder extends Seeder
         );
 
         // 2. Sampel Kategori
-        $kategoriIT = Kategori::firstOrCreate(['nama_kategori' => 'Teknologi Informasi']);
+        $kategoriIT = Kategori::firstOrCreate(
+            ['kode_kategori' => 'TI'],
+            ['nama_kategori' => 'Teknologi Informasi']
+        );
 
-        // 3. Sampel Buku (Wajib ada stok = 0 dan stok = 1 untuk uji ACID)
+        // 3. Sampel Buku (Lengkap dengan penerbit dan tahun terbit)
         $buku1 = Buku::updateOrCreate(
             ['isbn' => '978-602-001-1'],
             [
                 'judul' => 'Pemrograman Web Lanjutan Laravel',
                 'penulis' => 'Chandro Pardede',
+                'penerbit' => 'Del Press',
+                'tahun_terbit' => 2026,
                 'stok' => 1,
                 'kategori_id' => $kategoriIT->id,
+                'sinopsis' => 'Buku uji coba stok 1 untuk transaksi ACID.',
             ]
         );
 
@@ -40,12 +48,15 @@ class DatabaseSeeder extends Seeder
             [
                 'judul' => 'Algoritma dan Struktur Data',
                 'penulis' => 'Tim Dosen IT Del',
+                'penerbit' => 'Del Press',
+                'tahun_terbit' => 2026,
                 'stok' => 0,
                 'kategori_id' => $kategoriIT->id,
+                'sinopsis' => 'Buku uji coba stok 0 untuk pengujian rollback.',
             ]
         );
 
-        // 4. Sampel Peminjaman[cite: 7]
+        // 4. Sampel Peminjaman
         Peminjaman::updateOrCreate(
             ['kode_pinjam' => 'PINJAM-2026-001'],
             [
