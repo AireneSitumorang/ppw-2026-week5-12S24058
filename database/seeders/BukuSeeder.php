@@ -3,50 +3,207 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\Buku;
+use Illuminate\Support\Facades\DB;
 
 class BukuSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $bukus = [
+        // Ambil kategori yang sudah ada di database.
+        $kategoriTeknologi = DB::table('kategoris')
+            ->where('kode_kategori', 'TEK')
+            ->value('id');
+
+        $kategoriSistemInformasi = DB::table('kategoris')
+            ->where('kode_kategori', 'SIS')
+            ->value('id');
+
+        $kategoriBasisData = DB::table('kategoris')
+            ->where('kode_kategori', 'BDJ')
+            ->value('id');
+
+        if (
+            !$kategoriTeknologi ||
+            !$kategoriSistemInformasi ||
+            !$kategoriBasisData
+        ) {
+            throw new \RuntimeException(
+                'Kategori TEK, SIS, dan BDJ harus tersedia terlebih dahulu.'
+            );
+        }
+
+        // Pertahankan tiga buku awal menggunakan ISBN yang sama.
+        $bukuAwal = [
             [
-                'isbn' => '978-602-03-1234-1',
-                'judul' => 'Pemrograman Berorientasi Objek dengan Java',
-                'penulis' => 'Budi Raharjo',
-                'penerbit' => 'Informatika',
-                'tahun_terbit' => 2023,
-                'kategori_id' => 1, // Teknologi & Pemrograman
+                'isbn' => '9786020311111',
+                'judul' => 'Pemrograman Web Laravel 11',
+                'penulis' => 'Chandro Pardede',
+                'penerbit' => 'Del Press',
+                'tahun_terbit' => 2026,
+                'kategori_id' => $kategoriTeknologi,
                 'stok' => 15,
-                'sinopsis' => 'Buku panduan lengkap memahami konsep OOP, inheritance, polimorfisme, dan encapsulation menggunakan bahasa Java.',
+                'sinopsis' =>
+                    'Buku panduan praktikum pemanduan Laravel tingkat lanjut.',
             ],
             [
-                'isbn' => '978-602-03-5678-2',
-                'judul' => 'Analisis dan Perancangan Sistem Informasi',
-                'penulis' => 'Rosa A.S. & M. Salahuddin',
-                'penerbit' => 'Modula',
-                'tahun_terbit' => 2022,
-                'kategori_id' => 2, // Sistem Informasi
+                'isbn' => '9786020322222',
+                'judul' => 'Analisis dan Desain Sistem Informasi',
+                'penulis' => 'Airene Situmorang',
+                'penerbit' => 'IT Del Publisher',
+                'tahun_terbit' => 2026,
+                'kategori_id' => $kategoriSistemInformasi,
                 'stok' => 10,
-                'sinopsis' => 'Mempelajari siklus pengembangan sistem (SDLC), pemodelan UML, hingga perancangan basis data relasional.',
+                'sinopsis' =>
+                    'Mempelajari perancangan sistem informasi modern.',
             ],
             [
-                'isbn' => '978-602-03-9012-3',
-                'judul' => 'Laravel 11 untuk Pemula',
-                'penulis' => 'Eko Kurniawan Khannedy',
-                'penerbit' => 'Programmer Zaman Now',
-                'tahun_terbit' => 2024,
-                'kategori_id' => 1, // Teknologi & Pemrograman
-                'stok' => 20,
-                'sinopsis' => 'Belajar membuat aplikasi web modern menggunakan framework PHP Laravel versi terbaru.',
+                'isbn' => '9786020333333',
+                'judul' => 'Manajemen Basis Data Relasional',
+                'penulis' => 'Tim Del',
+                'penerbit' => 'Del Press',
+                'tahun_terbit' => 2025,
+                'kategori_id' => $kategoriBasisData,
+                'stok' => 8,
+                'sinopsis' =>
+                    'Konsep fundamental basis data relasional dan transaksi ACID.',
             ],
         ];
 
-        foreach ($bukus as $buku) {
-            Buku::create($buku);
+        foreach ($bukuAwal as $buku) {
+            DB::table('bukus')->updateOrInsert(
+                ['isbn' => $buku['isbn']],
+                array_merge($buku, [
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ])
+            );
+        }
+
+        // Jangan menghapus data jika jumlah buku sudah 130 atau lebih.
+        $jumlahBuku = DB::table('bukus')->count();
+
+        if ($jumlahBuku >= 130) {
+            return;
+        }
+
+        // Topik buku yang bervariasi.
+        $topik = [
+            'Pemrograman Web',
+            'Pemrograman Java',
+            'Pengembangan Aplikasi Mobile',
+            'Kecerdasan Buatan',
+            'Keamanan Siber',
+            'Jaringan Komputer',
+            'Cloud Computing',
+            'Analisis Sistem Informasi',
+            'Manajemen Proyek TI',
+            'Rekayasa Perangkat Lunak',
+            'Data Mining',
+            'Sistem Informasi Bisnis',
+            'Internet of Things',
+        ];
+
+        // Variasi judul untuk setiap topik.
+        $variasi = [
+            'Dasar dan Konsep',
+            'Teori dan Praktik',
+            'Panduan Lengkap',
+            'Studi Kasus',
+            'Implementasi Modern',
+            'Konsep Lanjutan',
+            'Metode dan Teknik',
+            'Perancangan Sistem',
+            'Praktikum Mahasiswa',
+            'Penerapan di Dunia Industri',
+        ];
+
+        $penulis = [
+            'Tim Del',
+            'Andi Pratama',
+            'Budi Santoso',
+            'Dewi Anggraini',
+            'Rina Simanjuntak',
+            'Dimas Saputra',
+            'Siti Rahmawati',
+            'Rudi Hartono',
+            'Nadia Putri',
+            'Kevin Wijaya',
+        ];
+
+        $penerbit = [
+            'Del Press',
+            'Informatika',
+            'Andi Publisher',
+            'Media Digital',
+            'Tekno Pustaka',
+        ];
+
+        $kategori = [
+            $kategoriTeknologi,
+            $kategoriSistemInformasi,
+            $kategoriBasisData,
+        ];
+
+        $nomor = 1;
+
+        // Tambahkan buku hanya sampai total mencapai 130.
+        foreach ($topik as $namaTopik) {
+            foreach ($variasi as $namaVariasi) {
+                if ($jumlahBuku >= 130) {
+                    break 2;
+                }
+
+                // ISBN dibuat konsisten agar tidak berulang
+                // ketika seeder dijalankan kembali.
+                $isbn = '978623' . str_pad(
+                    (string) $nomor,
+                    7,
+                    '0',
+                    STR_PAD_LEFT
+                );
+
+                $sudahAda = DB::table('bukus')
+                    ->where('isbn', $isbn)
+                    ->exists();
+
+                $judul = $namaTopik . ': ' . $namaVariasi;
+
+                // Hindari menimpa buku lain yang kebetulan
+                // sudah menggunakan ISBN yang sama.
+                if (!$sudahAda) {
+                    $sudahAdaJudul = DB::table('bukus')
+                        ->where('judul', $judul)
+                        ->exists();
+
+                    if (!$sudahAdaJudul) {
+                        DB::table('bukus')->insert([
+                            'isbn' => $isbn,
+                            'judul' => $judul,
+                            'penulis' => $penulis[
+                                ($nomor - 1) % count($penulis)
+                            ],
+                            'penerbit' => $penerbit[
+                                ($nomor - 1) % count($penerbit)
+                            ],
+                            'tahun_terbit' => 2018 + ($nomor % 9),
+                            'kategori_id' => $kategori[
+                                ($nomor - 1) % count($kategori)
+                            ],
+                            'stok' => 5 + ($nomor % 16),
+                            'sinopsis' =>
+                                'Buku pembelajaran ' . strtolower($namaTopik)
+                                . ' yang membahas ' . strtolower($namaVariasi)
+                                . ' beserta konsep, contoh, dan penerapannya.',
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                        $jumlahBuku++;
+                    }
+                }
+
+                $nomor++;
+            }
         }
     }
 }

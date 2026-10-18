@@ -2,12 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Peminjaman extends Model
 {
-    protected $table = 'peminjamans'; // Menegaskan nama tabel
+    use HasFactory;
+
+    protected $table = 'peminjamans';
 
     protected $fillable = [
         'kode_pinjam',
@@ -17,10 +19,13 @@ class Peminjaman extends Model
         'tanggal_pinjam',
         'tanggal_jatuh_tempo',
         'tanggal_kembali',
-        'status'
+        'status',
     ];
 
-    public function buku(): BelongsTo
+    /**
+     * Relasi ke model Buku (Many to One)
+     */
+    public function buku()
     {
         return $this->belongsTo(Buku::class);
     }
