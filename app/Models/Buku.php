@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Models;
@@ -25,13 +24,17 @@ class Buku extends Model
         'sinopsis',
     ];
 
-    // Relasi: satu buku memiliki satu kategori
+    /**
+     * Relasi: satu buku termasuk dalam satu kategori.
+     */
     public function kategori(): BelongsTo
     {
         return $this->belongsTo(Kategori::class, 'kategori_id');
     }
 
-    // Relasi: satu buku dapat memiliki banyak data peminjaman
+    /**
+     * Relasi: satu buku dapat memiliki banyak data peminjaman.
+     */
     public function peminjamans(): HasMany
     {
         return $this->hasMany(Peminjaman::class, 'buku_id');

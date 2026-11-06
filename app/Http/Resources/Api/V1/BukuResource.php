@@ -1,4 +1,3 @@
-
 <?php
 
 namespace App\Http\Resources\Api\V1;
@@ -8,6 +7,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class BukuResource extends JsonResource
 {
+    /**
+     * Mengubah data buku menjadi format JSON.
+     */
     public function toArray(Request $request): array
     {
         return [
@@ -20,6 +22,7 @@ class BukuResource extends JsonResource
             'stok' => $this->stok,
             'sinopsis' => $this->sinopsis,
 
+            // Informasi kategori buku
             'kategori' => $this->whenLoaded('kategori', function () {
                 return [
                     'id' => $this->kategori->id,
@@ -28,6 +31,7 @@ class BukuResource extends JsonResource
                 ];
             }),
 
+            // Jumlah peminjaman buku
             'peminjamans_count' => $this->whenCounted('peminjamans'),
         ];
     }
