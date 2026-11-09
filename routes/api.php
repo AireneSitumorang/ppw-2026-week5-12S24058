@@ -1,14 +1,14 @@
+Route::prefix('v1')->group(function () {
+    Route::get('/bukus', [BukuApiController::class, 'index']);
+    Route::get('/bukus/{id}', [BukuApiController::class, 'show']);
 
-<?php
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/bukus', [BukuApiController::class, 'store']);
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\V1\BukuApiController;
+        Route::put('/bukus/{id}', [BukuApiController::class, 'update']);
 
-// Route bawaan Laravel (tetap dipertahankan)
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+        Route::patch('/bukus/{id}', [BukuApiController::class, 'partialUpdate']);
 
-// REST API SIPUS-Del versi 1
-Route::get('/v1/buku', [BukuApiController::class, 'index']);
+        Route::delete('/bukus/{id}', [BukuApiController::class, 'destroy']);
+    });
+});

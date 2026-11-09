@@ -31,8 +31,24 @@ class BukuResource extends JsonResource
                 ];
             }),
 
-            // Jumlah peminjaman buku
+            // Jumlah seluruh peminjaman buku
             'peminjamans_count' => $this->whenCounted('peminjamans'),
+
+            // Riwayat peminjaman jika relasi dimuat
+            'riwayat_peminjaman' => PeminjamanResource::collection(
+                $this->whenLoaded('peminjamans')
+            ),
+
+            // HATEOAS: link peminjaman hanya jika stok tersedia
+            '_links' => $this->when(
+                (int) $this->stok > 0,
+                [
+                    'pinjam_buku' => [
+                        'href' => url('/api/v1/peminjamans'),
+                        'method' => 'POST',
+                    ],
+                ]
+            ),
         ];
     }
 }
