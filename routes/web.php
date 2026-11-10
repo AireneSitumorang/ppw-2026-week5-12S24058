@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BukuController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KategoriController;
+use App\Http\Controllers\Soap\LibrarySoapController;
 
 // Halaman Dashboard Utama
 Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
@@ -13,3 +14,7 @@ Route::resource('buku', BukuController::class);
 
 // Resource Controller Kategori
 Route::resource('kategori', KategoriController::class)->except(['show']);
+
+// Endpoint SOAP SIPUS-Del
+Route::get('/soap/sipus.wsdl', [LibrarySoapController::class, 'wsdl']);
+Route::post('/soap/sipus', [LibrarySoapController::class, 'checkBebasPustaka']);
