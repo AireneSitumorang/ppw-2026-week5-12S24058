@@ -15,5 +15,6 @@ Route::resource('buku', BukuController::class);
 // Resource Controller Kategori
 Route::resource('kategori', KategoriController::class)->except(['show']);
 
-// Endpoint SOAP untuk pengecekan bebas pustaka (Modul Minggu 9)
-Route::post('/soap/library', [LibrarySoapController::class, 'checkBebasPustaka']);
+// Endpoint SOAP SIPUS-Del
+Route::get('/soap/sipus.wsdl', [LibrarySoapController::class, 'wsdl']);
+Route::post('/soap/sipus', [LibrarySoapController::class, 'checkBebasPustaka']);
