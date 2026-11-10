@@ -1,7 +1,4 @@
 
-$file = (Resolve-Path "bootstrap/app.php").Path
-
-$code = @'
 <?php
 
 use Illuminate\Foundation\Application;
@@ -20,11 +17,20 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Pengecualian CSRF untuk endpoint SOAP
+        $middleware->validateCsrfTokens(except: [
+            'soap/*',
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
 
-        // Error 401: pengguna belum terautentikasi
+        // Memastikan respons API menggunakan JSON
+        $exceptions->shouldRenderJsonWhen(
+            fn (Request $request, Throwable $e) =>
+                $request->is('api/*') || $request->expectsJson()
+        );
+
+        // HTTP 401 - Unauthorized
         $exceptions->render(function (
             AuthenticationException $e,
             Request $request
@@ -42,7 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        // Error 404: resource atau route tidak ditemukan
+        // HTTP 404 - Not Found
         $exceptions->render(function (
             NotFoundHttpException $e,
             Request $request
@@ -60,7 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
-        // Error 422: validasi gagal
+        // HTTP 422 - Validation Error
         $exceptions->render(function (
             ValidationException $e,
             Request $request
@@ -80,10 +86,3 @@ return Application::configure(basePath: dirname(__DIR__))
         });
 
     })->create();
-'@
-
-[System.IO.File]::WriteAllText(
-    $file,
-    $code,
-    [System.Text.UTF8Encoding]::new($false)
-)
